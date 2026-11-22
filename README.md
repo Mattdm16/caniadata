@@ -71,17 +71,36 @@ consulte. En la misma laptop puedes dejar `http://localhost:11434` (funciona sin
 
 ## 4. Datos reales (CONADESUCA)
 
-Reemplaza `datos.csv` respetando el encabezado exacto:
+`datos.csv` ya está generado con datos oficiales: **691 filas, 58 ingenios,
+14 zafras (2012-2013 a 2025-2026)**, integradas desde los resúmenes INFOCANA
+guardados en `datos-raw/` (14 CSV, licencia CC-BY 4.0, datos.gob.mx).
+
+Formato (una fila por ingenio y zafra):
 
 ```
 ingenio,zafra,rendimiento_t_ha,superficie_ha,produccion_t
-Atencingo,2024-2025,108.11,20400,241668
-...
+Atencingo,2024-2025,100.22,17144.3,219154.4
 ```
 
-- Una fila por ingenio y zafra; punto decimal, sin comillas.
-- Si la página se abre como archivo (`file://`) usa los datos de ejemplo; sírvela con
-  `iniciar-local.bat` o GitHub Pages para que lea el CSV.
+- `rendimiento_t_ha` = caña molida bruta / superficie cosechada al cierre de la zafra.
+- `produccion_t` = azúcar total al cierre de la zafra.
+- La zafra **2025-2026 está en curso**: sus valores son parciales.
+- En INFOCANA las cifras semanales son acumuladas de la zafra; el script toma
+  el valor de la última semana (no la suma).
+- Los nombres de ingenios se normalizaron (la fuente usa razones sociales
+  distintas para el mismo molino: "Fideicomiso Ingenio X", "Cía. Azucarera X"...).
+- `datos-raw/` también incluye costos de producción por zafra (14 CSV),
+  balances mensuales de azúcar y sustentabilidad, para indicadores futuros.
+
+Para regenerar `datos.csv` (zafra nueva o datos actualizados):
+
+```
+python build-datos.py
+```
+
+El script imprime una validación por zafra (ingenios, superficie, azúcar)
+coherente con los totales nacionales conocidos (~740-800 mil ha y
+~4.7-6.0 millones de t de azúcar por zafra).
 
 ## 5. Problemas comunes
 
