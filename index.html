@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAÑAIdata — Producción de Caña de Azúcar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+  <div class="page">
+    <main class="shell" aria-label="CAÑAData">
+      <!-- ============ LEFT: solo filtros ============ -->
+      <aside class="sidebar" aria-label="Consulta y recomendación">
+        <p class="panel-title"><span aria-hidden="true">◉</span> Consulta y Recomendación</p>
+
+        <div class="field">
+          <label for="ingenio"><span aria-hidden="true">🏭</span> Ingenio azucarero</label>
+          <select id="ingenio">
+            <option value="todos">Todos los ingenios</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="zafra"><span aria-hidden="true">📅</span> Zafra (periodo)</label>
+          <select id="zafra">
+            <option value="todas">Todas las zafras</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="indicador"><span aria-hidden="true">📊</span> Indicador de análisis</label>
+          <select id="indicador">
+            <option value="rendimiento">Rendimiento de campo (t/ha)</option>
+            <option value="superficie">Superficie cosechada (ha)</option>
+            <option value="produccion">Producción de azúcar (t)</option>
+          </select>
+        </div>
+
+        <button class="consult-btn" id="consultBtn">✦ Consultar con IA</button>
+
+        <p class="note"><span aria-hidden="true">ⓘ</span> La respuesta se genera con IA local (Ollama) usando los datos cargados. El modelo se ajusta en ⚙ Configurar IA.</p>
+      </aside>
+
+      <!-- ============ CENTER: chat limpio ============ -->
+      <section class="stage initial" aria-label="Resultados y chat">
+        <header class="banner">
+          <span class="data-badge" id="dataBadge">Cargando datos…</span>
+          <div class="banner-text">
+            <h1>CAÑAIdata</h1>
+          </div>
+        </header>
+
+        <p class="section-bar section-bar--green results-part"><span aria-hidden="true">📶</span> Resultado del análisis</p>
+
+        <div class="stats results-part" id="statsRow">
+          <div class="stat"><span class="stat-ico" aria-hidden="true">🌱</span><div><span>Ingenios analizados</span><strong id="statIngenios">—</strong></div></div>
+          <div class="stat"><span class="stat-ico" aria-hidden="true">🌴</span><div><span id="statPromedioLbl">Promedio · rendimiento</span><strong id="statPromedio">—</strong></div></div>
+          <div class="stat"><span class="stat-ico" aria-hidden="true">📈</span><div><span id="statMejorLbl">Mejor · —</span><strong id="statMejor">—</strong></div></div>
+          <div class="stat"><span class="stat-ico" aria-hidden="true">📅</span><div><span>Periodo analizado</span><strong id="statPeriodo">—</strong></div></div>
+        </div>
+
+        <p class="section-bar section-bar--lilac"><span aria-hidden="true">✦</span> Recomendación de la IA</p>
+
+        <div class="thread" id="thread" aria-live="polite">
+          <div class="empty-state" id="emptyState">
+            <p><strong>Aquí aparecerá el análisis.</strong></p>
+            <p>Elige los filtros de la izquierda, escribe tu pregunta abajo y pulsa <strong>Consultar con IA</strong>.<br />La IA corre en la laptop del equipo (Ollama), conectada en local o por túnel.</p>
+          </div>
+        </div>
+
+        <div class="composer" role="search">
+          <label class="composer-label" for="composerInput">💬 Pregunta o solicitud</label>
+          <div class="composer-row">
+            <textarea id="composerInput" rows="2" placeholder="¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?">¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?</textarea>
+            <button class="send-btn" id="sendBtn" aria-label="Consultar con IA">↑</button>
+            <button class="cfg-btn" id="cfgBtn" aria-label="Configurar IA" title="Configurar IA">⚙</button>
+          </div>
+
+          <div class="ia-config" aria-label="Configuración de la IA">
+            <label for="cfgUrl">URL de la IA (Ollama)</label>
+            <input id="cfgUrl" type="text" placeholder="https://algo.trycloudflare.com" />
+            <label for="cfgModelo">Modelo</label>
+            <input id="cfgModelo" type="text" placeholder="llama3.2:3b" />
+            <div class="cfg-actions">
+              <button type="button" class="cfg-accion" id="cfgProbar">Probar conexión</button>
+              <button type="button" class="cfg-accion" id="cfgGuardar">Guardar</button>
+            </div>
+            <p class="cfg-status" id="cfgStatus">En localhost funciona sin cambiar nada. Para usar la página desde la web u otra máquina, pega aquí la URL del túnel (trycloudflare) y pulsa Guardar.</p>
+          </div>
+
+          <p class="composer-hint" id="composerHint">La respuesta se genera con IA local.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="./datos-demo.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
