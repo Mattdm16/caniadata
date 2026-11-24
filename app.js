@@ -16,6 +16,8 @@ $(function () {
   var actaSeq = 0;
   var trabajando = false;
   var yaAnalizo = false;
+  var ultimoInd = 'rendimiento';
+  var pendiente = null;
 
   function esc(value) { return $('<div>').text(String(value == null ? '' : value)).html(); }
   function fmt(value) {
@@ -94,12 +96,6 @@ $(function () {
       });
   }
 
-  function zafraCompletaRecomendada() {
-    var years = unique(datos, 'zafra').sort().reverse();
-    var completos = years.filter(function (z) { return z !== A.ZAFRA_EN_CURSO; });
-    return completos[0] || years[0] || 'todas';
-  }
-
   function llenarFiltros() {
     var $ingenio = $('#ingenio').empty().append($('<option>').val('todos').text('Todos los ingenios'));
     unique(datos, 'ingenio').sort(function (a, b) { return a.localeCompare(b, 'es'); }).forEach(function (name) {
@@ -110,8 +106,7 @@ $(function () {
       $zafra.append($('<option>').val(year).text(year));
     });
     $('#ingenio').val('todos');
-    $('#zafra').val(zafraCompletaRecomendada());
-    $('#indicador').val('rendimiento');
+    $('#zafra').val('todas');
     $('#cfgModelo').val(aiModel());
     $('#cfgUrl').val(aiUrl());
     $('#footModelo').text(aiModel());
@@ -121,18 +116,22 @@ $(function () {
   function filtrosActuales() {
     return {
       ing: $('#ingenio').val() || 'todos',
-      zaf: $('#zafra').val() || 'todas',
-      ind: $('#indicador').val() || 'rendimiento'
+      zaf: $('#zafra').val() || 'todas'
     };
   }
 
-  function textoFiltros() {
-    return $('#ingenio option:selected').text() + ' · ' +
-      $('#zafra option:selected').text() + ' · ' +
-      $('#indicador option:selected').text();
+  function etiquetaIndicador(ind) {
+    var meta = A.INDICADORES[ind] || A.INDICADORES.rendimiento;
+    return meta.nombre.charAt(0).toUpperCase() + meta.nombre.slice(1) + ' (' + meta.unidad + ')';
   }
 
-  function actualizarExpediente(result) {
+  function textoFiltros(filtros, ind) {
+    var ingTxt = filtros.ing === 'todos' ? 'Todos los ingenios' : filtros.ing;
+    var zafTxt = filtros.zaf === 'todas' ? 'Todas las zafras' : filtros.zaf;
+    return ingTxt + ' · ' + zafTxt + ' · ' + etiquetaIndicador(ind);
+  }
+
+  function actualizarExpediente(result, filtros, ind) {
     stats = result;
     if (!result || !result.tieneDatos) {
       limpiarExpediente();
@@ -154,7 +153,7 @@ $(function () {
     $('#statPeriodo').text(result.periodo);
 
     var base = result.registros + ' registros válidos de ' + result.registrosSeleccionados +
-      ' seleccionados · ' + textoFiltros();
+      ' seleccionados · ' + textoFiltros(filtros, ind);
     if (result.parcialUsado) base += ' · Incluye datos parciales de 2025-2026.';
     else if (result.zafraParcialSeleccionadaSinDato) base += ' · La zafra 2025-2026 está seleccionada, pero no hay producción reportada para este indicador.';
     if (result.registrosSinDato > 0 && result.indicador === 'produccion') {
@@ -207,8 +206,8 @@ $(function () {
     }
   }
 
-  function calcularActual() {
-    return A.analizar(datos, filtrosActuales(), A.ZAFRA_EN_CURSO);
+  function calcularCon(filtros, ind) {
+    return A.analizar(datos, { ing: filtros.ing, zaf: filtros.zaf, ind: ind }, A.ZAFRA_EN_CURSO);
   }
 
   /* ---------- Estado de IA ---------- */
@@ -343,16 +342,18 @@ $(function () {
   }
 
   /* ---------- Actas ---------- */
-  function actaHtml(a) {
+  function actaHtml(a, conIA) {
+    var bloqueIA = conIA
+      ? '<section class="ai-guidance"><h4>Orientación de la IA · propuesta para revisión técnica</h4>' +
+        '<p class="ai-disclaimer">Las sugerencias son orientativas; no son hallazgos medidos ni demuestran causalidad.</p>' +
+        '<div class="informe"><p class="msg-cargando">Elaborando sugerencias<span class="puntos" aria-hidden="true"></span></p></div></section>' +
+        '<p class="acta-firma">Orientación generada por IA local · ' + esc(a.modelo) + ' · se usaron ' + a.registros + ' registros válidos del origen activo.</p>'
+      : '<p class="acta-firma">Análisis de datos sin orientación de IA: tu pregunta pedía cifras, no recomendaciones.</p>';
     return '<article class="acta" id="acta-' + a.id + '">' +
       '<div class="acta-head"><span class="acta-num">Acta ' + a.id + '</span>' +
       '<span class="acta-meta">' + esc(a.filtrosTxt) + ' · ' + esc(a.fecha) + '</span></div>' +
       '<p class="acta-q">“' + esc(a.pregunta) + '”</p>' +
-      evidenceHtml(a.result) +
-      '<section class="ai-guidance"><h4>Orientación de la IA · propuesta para revisión técnica</h4>' +
-      '<p class="ai-disclaimer">Las sugerencias son orientativas; no son hallazgos medidos ni demuestran causalidad.</p>' +
-      '<div class="informe"><p class="msg-cargando">Elaborando sugerencias<span class="puntos" aria-hidden="true"></span></p></div></section>' +
-      '<p class="acta-firma">Orientación generada por IA local · ' + esc(a.modelo) + ' · se usaron ' + a.registros + ' registros válidos del origen activo.</p>' +
+      evidenceHtml(a.result) + bloqueIA +
       '<div class="seguimiento"><p class="seg-count">Preguntas de seguimiento: 0 de ' + MAX_SEG + '</p>' +
       '<div class="seg-row"><input type="text" maxlength="' + MAX_Q + '" placeholder="Pregunta de seguimiento sobre esta acta…" aria-label="Pregunta de seguimiento" />' +
       '<button type="button" class="seg-btn">Preguntar</button></div><div class="seg-list"></div></div></article>';
@@ -360,7 +361,7 @@ $(function () {
 
   function setTrabajando(value) {
     trabajando = value;
-    $('#consultBtn').prop('disabled', value || !preguntaValida()).text(value ? 'Elaborando orientación…' : 'Generar recomendación');
+    $('#consultBtn').prop('disabled', value || !preguntaValida()).text(value ? 'Elaborando orientación…' : 'Analizar consulta');
     $('#composerInput').prop('disabled', value);
     $('.seg-btn').prop('disabled', value);
     validarPregunta();
@@ -368,7 +369,7 @@ $(function () {
 
   function marcarActasStale() {
     var f = filtrosActuales();
-    var signature = f.ing + '|' + f.zaf + '|' + f.ind;
+    var signature = f.ing + '|' + f.zaf + '|' + ultimoInd;
     actas.forEach(function (acta) {
       var $article = $('#acta-' + acta.id);
       var stale = acta.firma !== signature;
@@ -384,37 +385,121 @@ $(function () {
     $('#emptyState').remove();
     var text;
     if (result.registrosSeleccionados === 0) {
-      text = 'No hay registros para la combinación de filtros seleccionada.';
+      text = 'No hay registros para la combinación seleccionada.';
     } else if (result.indicador === 'produccion' && result.zafraParcialSeleccionadaSinDato) {
       text = 'La zafra en curso todavía no tiene producción de azúcar reportada. Esos ceros se tratan como datos pendientes, no como producción real igual a cero.';
     } else {
-      text = 'Hay registros para los filtros, pero no contienen valores válidos para el indicador seleccionado.';
+      text = 'Hay registros para los filtros, pero no contienen valores válidos para este análisis.';
     }
-    $('#thread').append('<div class="msg-policy" role="status"><strong>No hay base suficiente para emitir el análisis.</strong><p>' + esc(text) + ' Ajuste los filtros o elija otro indicador. No se envió la consulta a la IA.</p></div>');
+    $('#thread').append('<div class="msg-policy" role="status"><strong>No hay base suficiente para emitir el análisis.</strong><p>' + esc(text) + ' Ajusta los filtros o amplía el periodo. No se envió la consulta a la IA.</p></div>');
     $('#composerHint').text('No se creó un acta porque no hay cifras válidas para estos filtros.');
+  }
+
+  function revelarExpediente() {
+    $('#pasoExpediente').prop('hidden', false);
+  }
+
+  function limpiarPendiente() {
+    pendiente = null;
+    $('#thread .msg-pendiente').remove();
+  }
+
+  function burbujaOpciones(titulo, texto, botones) {
+    $('#emptyState').remove();
+    var html = '<div class="msg-policy msg-pendiente" role="status"><strong>' + esc(titulo) + '</strong><p>' + esc(texto) + '</p><div class="opciones-inline">';
+    botones.forEach(function (b) {
+      html += '<button type="button" class="opcion-btn" data-valor="' + esc(b.valor) + '" data-accion="' + esc(b.accion) + '">' + esc(b.texto) + '</button>';
+    });
+    return $(html + '</div></div>');
+  }
+
+  function pedirAclaracion(question) {
+    limpiarPendiente();
+    pendiente = { tipo: 'indicador', pregunta: question };
+    var $b = burbujaOpciones(
+      'Antes de analizar, una precisión.',
+      '¿Sobre qué indicador quieres el análisis?',
+      [
+        { accion: 'indicador', valor: 'rendimiento', texto: 'Rendimiento de campo (t/ha)' },
+        { accion: 'indicador', valor: 'superficie', texto: 'Superficie cosechada (ha)' },
+        { accion: 'indicador', valor: 'produccion', texto: 'Producción de azúcar (t)' }
+      ]);
+    $('#thread').append($b);
+    $b[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    $('#composerHint').text('Elige un indicador para continuar con tu pregunta.');
+  }
+
+  function etiquetaFiltro(valor, tipo) {
+    if (tipo === 'ing') return valor === 'todos' ? 'Todos los ingenios' : valor;
+    return valor === 'todas' ? 'Todas las zafras' : valor;
+  }
+
+  function pedirConfirmacionFiltros(pregunta, ind, res) {
+    limpiarPendiente();
+    var partes = res.conflictos.map(function (c) {
+      var que = c.tipo === 'ing' ? 'ingenio' : 'zafra';
+      return 'preguntas por ' + etiquetaFiltro(c.propuesto, c.tipo) + ' pero el filtro dice ' + etiquetaFiltro(c.actual, c.tipo) + ' (' + que + ')';
+    });
+    pendiente = { tipo: 'conflicto', pregunta: pregunta, ind: ind, res: res };
+    var $b = burbujaOpciones(
+      'Tu pregunta y los filtros no coinciden.',
+      'Tu pregunta ' + partes.join(' y ') + '. ¿Qué análisis prefieres?',
+      [
+        { accion: 'filtros', valor: 'mencion', texto: 'Analizar lo que pregunté' },
+        { accion: 'filtros', valor: 'filtro', texto: 'Mantener mis filtros' }
+      ]);
+    $('#thread').append($b);
+    $b[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    $('#composerHint').text('Confirma qué alcance usar para no analizar algo distinto a lo que pediste.');
+  }
+
+  function filtrosResueltos(res, modo) {
+    if (modo !== 'mencion') return { ing: filtrosActuales().ing, zaf: filtrosActuales().zaf };
+    var ing = filtrosActuales().ing, zaf = filtrosActuales().zaf;
+    res.conflictos.forEach(function (c) {
+      if (c.tipo === 'ing') ing = c.propuesto;
+      else zaf = c.propuesto;
+    });
+    if (res.ing !== filtrosActuales().ing) ing = res.ing;
+    if (res.zaf !== filtrosActuales().zaf) zaf = res.zaf;
+    $('#ingenio').val(ing);
+    $('#zafra').val(zaf);
+    return { ing: ing, zaf: zaf };
   }
 
   function consultar() {
     var question = $('#composerInput').val().trim();
     if (!question || question.length > MAX_Q || trabajando) { $('#composerInput').trigger('focus'); return; }
+    if (pendiente) limpiarPendiente();
     var classified = clasificar(question, false);
     if (!classified.ok) { mostrarAvisoPolitica(classified.tipo); return; }
 
-    var result = calcularActual();
-    actualizarExpediente(result);
+    var ind = A.detectarIndicador(question);
+    if (!ind) { pedirAclaracion(question); return; }
+
+    var res = A.resolverFiltros(filtrosActuales(), A.extraerMenciones(question, unique(datos, 'ingenio'), unique(datos, 'zafra')), question);
+    if (res.conflictos.length) { pedirConfirmacionFiltros(question, ind, res); return; }
+    analizarYMostrar(question, ind, { ing: res.ing, zaf: res.zaf });
+  }
+
+  function analizarYMostrar(question, ind, filtros) {
+    ultimoInd = ind;
+    var result = calcularCon(filtros, ind);
+    actualizarExpediente(result, filtros, ind);
+    revelarExpediente();
     yaAnalizo = true;
-    if (!result.tieneDatos) { mensajeSinDatos(result); return; }
+    if (!result.tieneDatos) { mensajeSinDatos(result, filtros, ind); return; }
 
     actaSeq += 1;
-    var filters = filtrosActuales();
+    var conIA = A.necesitaRecomendacion(question);
     var acta = {
       id: actaSeq,
-      filtrosTxt: textoFiltros(),
+      filtrosTxt: textoFiltros(filtros, ind),
       pregunta: question,
       fecha: fechaHora(),
       modelo: aiModel(),
       registros: result.registros,
-      firma: filters.ing + '|' + filters.zaf + '|' + filters.ind,
+      firma: filtros.ing + '|' + filtros.zaf + '|' + ind,
       result: result,
       contexto: contextoIA(result, question),
       orientacion: '',
@@ -422,11 +507,15 @@ $(function () {
     };
     actas.push(acta);
     $('#emptyState').remove();
-    $('#thread').append(actaHtml(acta));
+    $('#thread').append(actaHtml(acta, conIA));
     var $article = $('#acta-' + acta.id);
     $article[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
-    $('#composerHint').text('Las cifras se calcularon desde el CSV. La IA generará solo sugerencias cualitativas.');
-    solicitarOrientacion(acta, $article);
+    if (conIA) {
+      $('#composerHint').text('Las cifras se calcularon desde el CSV. La IA generará solo sugerencias cualitativas.');
+      solicitarOrientacion(acta, $article);
+    } else {
+      $('#composerHint').text('Se muestran los datos calculados; tu pregunta pedía cifras, no orientación.');
+    }
   }
 
   function solicitarOrientacion(acta, $article) {
@@ -598,8 +687,8 @@ $(function () {
   });
 
   /* ---------- Eventos ---------- */
-  $('#ingenio, #zafra, #indicador').on('change', function () {
-    if (yaAnalizo) actualizarExpediente(calcularActual());
+  $('#ingenio, #zafra').on('change', function () {
+    if (yaAnalizo) actualizarExpediente(calcularCon(filtrosActuales(), ultimoInd), filtrosActuales(), ultimoInd);
     else limpiarExpediente();
     marcarActasStale();
   });
@@ -620,6 +709,20 @@ $(function () {
   });
   $('#thread').on('keydown', '.seg-row input', function (event) {
     if (event.key === 'Enter') { event.preventDefault(); $(this).closest('.seg-row').find('.seg-btn').trigger('click'); }
+  });
+  $('#thread').on('click', '.opcion-btn', function () {
+    if (trabajando || !pendiente) return;
+    var accion = $(this).data('accion');
+    var valor = $(this).data('valor');
+    var p = pendiente;
+    limpiarPendiente();
+    if (accion === 'indicador') {
+      var res = A.resolverFiltros(filtrosActuales(), A.extraerMenciones(p.pregunta, unique(datos, 'ingenio'), unique(datos, 'zafra')), p.pregunta);
+      if (res.conflictos.length) { pedirConfirmacionFiltros(p.pregunta, valor, res); return; }
+      analizarYMostrar(p.pregunta, valor, { ing: res.ing, zaf: res.zaf });
+    } else if (accion === 'filtros') {
+      analizarYMostrar(p.pregunta, p.ind, filtrosResueltos(p.res, valor));
+    }
   });
   $('#thread').on('click', '.retry-acta', function () {
     var $article = $(this).closest('.acta');

@@ -207,12 +207,104 @@
     return { ok: true, texto: value };
   }
 
+  /* ---------- Interpretación de la pregunta (sin adivinar) ---------- */
+
+  var PATRON_INDICADOR = {
+    rendimiento: [/\brendimiento\b/, /t\s*\/\s*ha/, /toneladas?\s+por\s+hectarea/, /por\s+hectarea/, /\brinde\b/, /\brinden\b/, /productividad del campo/],
+    superficie: [/\bsuperficie\b/, /\bhectareas?\b/, /\bha\b/, /extension/, /area\s+(cosechada|cultivada|sembrada|de cultivo)/, /cuantas?\s+hectareas?/],
+    produccion: [/\bproduccion\b/, /azucar\s+total/, /cuant[oa]\s+azucar/, /\bprodujo\b/, /\bprodujeron\b/, /\bproducido\b/, /\bmolienda\b/, /toneladas?(?!\s+por\s+hectarea)/]
+  };
+
+  // Devuelve 'rendimiento' | 'superficie' | 'produccion', o null si la
+  // pregunta no señala un único indicador (caso ambiguo: hay que preguntar).
+  function detectarIndicador(question) {
+    var q = normalizarTexto(question);
+    if (!q) return null;
+    var sinTHa = q.replace(/t\s*\/\s*ha/g, ' ').replace(/toneladas?\s+por\s+hectarea/g, ' ').replace(/por\s+hectarea/g, ' ');
+    var hits = [];
+    if (PATRON_INDICADOR.rendimiento.some(function (re) { return re.test(q); })) hits.push('rendimiento');
+    if (PATRON_INDICADOR.superficie.some(function (re) { return re.test(sinTHa); })) hits.push('superficie');
+    if (PATRON_INDICADOR.produccion.some(function (re) { return re.test(sinTHa); })) hits.push('produccion');
+    return hits.length === 1 ? hits[0] : null;
+  }
+
+  // Extrae ingenios y zafras nombrados literalmente en el texto.
+  // Solo acepta zafras completas ("2024-2025", "2024/25"); un año suelto
+  // como "2024" es ambiguo (2023-2024 o 2024-2025) y no se interpreta.
+  function extraerMenciones(question, ingenios, zafras) {
+    var q = normalizarTexto(question);
+    var out = { ingenios: [], zafras: [] };
+    (ingenios || []).forEach(function (name) {
+      var n = normalizarTexto(name);
+      if (n.length >= 4 && contieneFrase(q, n) && out.ingenios.indexOf(name) < 0) out.ingenios.push(name);
+    });
+    var rangos = q.match(/\b((?:19|20)\d{2})\s*[-–\/]\s*(\d{2}|\d{4})\b/g) || [];
+    rangos.forEach(function (m) {
+      var partes = m.split(/[-–\/]/).map(function (s) { return s.trim(); });
+      var fin = partes[1].length === 2 ? partes[0].slice(0, 2) + partes[1] : partes[1];
+      var zafra = partes[0] + '-' + fin;
+      if ((zafras || []).indexOf(zafra) >= 0 && out.zafras.indexOf(zafra) < 0) out.zafras.push(zafra);
+    });
+    return out;
+  }
+
+  var MARCA_TODOS_INGENIOS = /\b(todos los ingenios|cada ingenio|en general|a nivel nacional|comparar|comparacion|entre ingenios|entre los ingenios)\b/;
+  var MARCA_TODAS_ZAFRAS = /\b(todas las zafras|historico|historica|evolucion|tendencia|en general|a nivel nacional)\b/;
+
+  // Cruza filtros manuales con lo mencionado en la pregunta.
+  // Devuelve { ing, zaf, conflictos } donde cada conflicto es
+  // { tipo: 'ing'|'zaf', actual, propuesto } ('todos'/'todas' = ampliar).
+  // Sin conflicto no se adivina nada: lo más específico gana en silencio.
+  function resolverFiltros(filtro, menciones, pregunta) {
+    var q = normalizarTexto(pregunta);
+    var resultado = { ing: filtro.ing, zaf: filtro.zaf, conflictos: [] };
+    var mIng = (menciones && menciones.ingenios) || [];
+    var mZaf = (menciones && menciones.zafras) || [];
+    var conflictoIng = null;
+    var conflictoZaf = null;
+
+    if (mIng.length === 1 && filtro.ing !== 'todos' && filtro.ing !== mIng[0]) {
+      conflictoIng = { tipo: 'ing', actual: filtro.ing, propuesto: mIng[0] };
+    } else if (mIng.length > 1 && filtro.ing !== 'todos') {
+      conflictoIng = { tipo: 'ing', actual: filtro.ing, propuesto: 'todos' };
+    } else if (mIng.length === 1 && filtro.ing === 'todos') {
+      resultado.ing = mIng[0];
+    } else if (!mIng.length && filtro.ing !== 'todos' && MARCA_TODOS_INGENIOS.test(q)) {
+      conflictoIng = { tipo: 'ing', actual: filtro.ing, propuesto: 'todos' };
+    }
+
+    if (mZaf.length === 1 && filtro.zaf !== 'todas' && filtro.zaf !== mZaf[0]) {
+      conflictoZaf = { tipo: 'zaf', actual: filtro.zaf, propuesto: mZaf[0] };
+    } else if (mZaf.length > 1 && filtro.zaf !== 'todas') {
+      conflictoZaf = { tipo: 'zaf', actual: filtro.zaf, propuesto: 'todas' };
+    } else if (mZaf.length === 1 && filtro.zaf === 'todas') {
+      resultado.zaf = mZaf[0];
+    } else if (!mZaf.length && filtro.zaf !== 'todas' && MARCA_TODAS_ZAFRAS.test(q)) {
+      conflictoZaf = { tipo: 'zaf', actual: filtro.zaf, propuesto: 'todas' };
+    }
+
+    if (conflictoIng) resultado.conflictos.push(conflictoIng);
+    if (conflictoZaf) resultado.conflictos.push(conflictoZaf);
+    return resultado;
+  }
+
+  // ¿La pregunta pide orientación (consejo, causas, acciones)?
+  // Si solo pide cifras o comparaciones, la respuesta son los datos.
+  var PIDE_ORIENTACION = /\b(recomienda|recomendacion|sugier|sugerencia|consejo|aconseja|deberia|deberian|conviene|que hacer|que le conviene|por que|causa|mejorar|practica|practicas|que harias|acciones|orientacion|evaluable|replicable|que puedo hacer)\b/;
+  function necesitaRecomendacion(question) {
+    return PIDE_ORIENTACION.test(normalizarTexto(question));
+  }
+
   return {
     ZAFRA_EN_CURSO: ZAFRA_EN_CURSO,
     INDICADORES: INDICADORES,
     parseCsv: parseCsv,
     analizar: analizar,
     clasificarPregunta: clasificarPregunta,
-    validarOrientacionIA: validarOrientacionIA
+    validarOrientacionIA: validarOrientacionIA,
+    detectarIndicador: detectarIndicador,
+    extraerMenciones: extraerMenciones,
+    resolverFiltros: resolverFiltros,
+    necesitaRecomendacion: necesitaRecomendacion
   };
 }));

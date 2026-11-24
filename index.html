@@ -57,37 +57,28 @@
         <section class="paso">
           <h2><span class="paso-num" aria-hidden="true">1</span> Definir la consulta</h2>
 
-          <div class="field">
-            <label for="ingenio">
-              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 21V10l5-3v4h4V7l5 3v11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M2.5 21h19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              Ingenio azucarero
-            </label>
-            <select id="ingenio">
-              <option value="todos">Todos los ingenios</option>
-            </select>
-          </div>
+          <details class="filtros-det">
+            <summary>Ajustar consulta <span class="filtros-det-hint">Opcional</span></summary>
+            <div class="field">
+              <label for="ingenio">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 21V10l5-3v4h4V7l5 3v11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M2.5 21h19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                Ingenio azucarero
+              </label>
+              <select id="ingenio">
+                <option value="todos">Todos los ingenios</option>
+              </select>
+            </div>
 
-          <div class="field">
-            <label for="zafra">
-              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              Zafra (periodo)
-            </label>
-            <select id="zafra">
-              <option value="todas">Todas las zafras</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="indicador">
-              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7 20v-7M12 20V6M17 20v-10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              Indicador de análisis
-            </label>
-            <select id="indicador">
-              <option value="rendimiento">Rendimiento de campo (t/ha)</option>
-              <option value="superficie">Superficie cosechada (ha)</option>
-              <option value="produccion">Producción de azúcar (t)</option>
-            </select>
-          </div>
+            <div class="field">
+              <label for="zafra">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                Zafra (periodo)
+              </label>
+              <select id="zafra">
+                <option value="todas">Todas las zafras</option>
+              </select>
+            </div>
+          </details>
 
           <div class="field">
             <label for="composerInput">
@@ -105,8 +96,8 @@
             <button type="button" class="ejemplo" data-q="¿Qué prácticas de manejo conviene evaluar en los ingenios con mejor rendimiento?">Prácticas que conviene evaluar</button>
           </div>
 
-          <button class="consult-btn" id="consultBtn">Generar recomendación</button>
-          <p class="composer-hint" id="composerHint">La respuesta se genera con IA local, a partir de los datos cargados.</p>
+          <button class="consult-btn" id="consultBtn">Analizar consulta</button>
+          <p class="composer-hint" id="composerHint">Formula tu pregunta para comenzar el análisis.</p>
 
           <p class="note">Esta consultora asesora exclusivamente sobre la producción de caña de azúcar a partir de los datos históricos cargados. El modelo se ajusta en Ajustes de la IA.</p>
         </section>
@@ -114,7 +105,7 @@
 
       <!-- Pasos 2 y 3 -->
       <section class="stage" aria-label="Expediente y recomendación">
-        <section class="paso" aria-label="Paso 2: expediente de análisis">
+        <section class="paso" id="pasoExpediente" aria-label="Paso 2: expediente de análisis" hidden>
           <h2><span class="paso-num" aria-hidden="true">2</span> Expediente de análisis</h2>
           <dl class="ledger">
             <div><dt>Ingenios analizados</dt><dd id="statIngenios">—</dd></div>
@@ -136,8 +127,8 @@
           <h2><span class="paso-num" aria-hidden="true">3</span> Recomendación de la consultora</h2>
           <div class="thread" id="thread" aria-live="polite">
             <div class="empty-state" id="emptyState">
-              <p class="empty-title">El expediente está listo para abrirse.</p>
-              <p>Defina los filtros, formule una pregunta sobre los indicadores disponibles y pulse <strong>Generar recomendación</strong>. Cada consulta válida abre un acta con cifras calculadas y hasta tres seguimientos; las consultas fuera de alcance se detienen antes de llamar a la IA.</p>
+              <p class="empty-title">En espera de tu consulta.</p>
+              <p>Formula tu pregunta arriba y pulsa <strong>Analizar consulta</strong>. Aquí aparecerán el expediente y, cuando la pregunta lo pida, la recomendación.</p>
               <p class="session-note">Las actas y seguimientos viven solo en esta sesión del navegador; al recargar la página se reinicia el expediente.</p>
             </div>
           </div>
