@@ -1,8 +1,10 @@
 # CAÑAIdata — Análisis y recomendaciones de caña de azúcar con IA local
 
-Web pública (HTML + CSS + jQuery) que consulta datos históricos de producción de caña
-de azúcar y genera recomendaciones con **IA local (Ollama)** corriendo en la laptop del
-equipo, conectada por localhost o por **túnel** para que cualquier visitante pueda usarla.
+Web estática (HTML + CSS + jQuery) que consulta datos históricos de producción de caña
+de azúcar. Las cifras y rankings se calculan determinísticamente en el navegador; Ollama
+solo propone orientación cualitativa. Para la demo, la página debe abrirse en la misma
+laptop donde corre Ollama. No expongas el puerto de Ollama directamente a internet: la API
+local no incorpora autenticación.
 
 ## Archivos
 
@@ -10,12 +12,16 @@ equipo, conectada por localhost o por **túnel** para que cualquier visitante pu
 |---|---|
 | `index.html` | La vista (filtros, resultados, chat de recomendación) |
 | `styles.css` | Estilos |
-| `app.js` | Lógica: carga CSV, estadísticas y consulta a Ollama (AJAX) |
-| `datos-demo.js` | Datos de EJEMPLO (respaldo si no hay `datos.csv`) |
+| `app.js` | Interfaz, actas, estados y conexión con Ollama |
+| `analytics.js` | Parser CSV, métricas determinísticas y control de alcance, compartidos con las pruebas |
+| `tests/` | Pruebas de cálculos, clasificación, respuestas seguras y CSV oficial |
+| `datos-demo.js` | Datos de ejemplo (respaldo no oficial si falla el CSV) |
 | `datos.csv` | Datos actuales (mismo formato que el CSV real) |
 | `iniciar-local.bat` | Servidor local en http://localhost:8080 |
 
-## 1. Correr en local (demo sin internet)
+## 1. Correr en local
+
+El servidor web y Ollama corren localmente. La página carga jQuery y la tipografía desde CDN, así que necesita internet mientras esos recursos sigan externos.
 
 1. Instalar Python y Ollama: <https://ollama.com/download>
 2. Descargar el modelo:
@@ -42,32 +48,27 @@ equipo, conectada por localhost o por **túnel** para que cualquier visitante pu
 3. En GitHub: **Settings → Pages → Branch: main, carpeta / (root) → Save**.
 4. En 1-2 min queda en: `https://TUUSUARIO.github.io/canaiadata/`
 
-## 3. Activar la IA desde tu laptop (modo túnel — cualquiera puede consultar)
+## 3. Usar Ollama desde la web pública en la misma laptop
 
-**Una sola vez en la laptop con Ollama:**
+La página pública puede llamar a `http://localhost:11434` únicamente cuando se abre en el
+mismo equipo donde Ollama está corriendo. `localhost` siempre se refiere a la computadora
+que usa el navegador. En otra computadora sin Ollama, la interfaz y los datos cargan, pero
+la IA local no estará disponible.
 
-1. Permitir que Ollama reciba pedidos de la web (CORS):
-   ```
-   setx OLLAMA_ORIGINS "*"
-   ```
-   Luego clic derecho en el ícono de Ollama (bandeja) → **Quit**, y volver a abrir Ollama.
-2. Descargar `cloudflared` (sin cuenta, gratis):
-   <https://github.com/cloudflare/cloudflared/releases> → `cloudflared-windows-amd64.exe`.
-3. Con Ollama corriendo, abrir una terminal donde tengas el .exe y ejecutar:
-   ```
-   .\cloudflared-windows-amd64.exe tunnel --url http://localhost:11434
-   ```
-4. Copia la URL que imprime, algo como `https://xxxxx.trycloudflare.com`.
-   ⚠ Esa URL **cada vez que reinicies el túnel** — vuelve al paso 3 y copia la nueva.
+En Windows, permite solo los orígenes que usas (sin comodín):
 
-**En la página (cualquier visitante):**
+```
+setx OLLAMA_ORIGINS "http://localhost:*,https://mattdm16.github.io"
+```
 
-1. Botón **⚙ Configurar IA** (junto al de enviar) → pegar la URL del túnel → **Guardar**.
-2. **Probar conexión** debe decir `Conexión OK. Modelos disponibles: llama3.2:3b…`
-3. **Consultar con IA**. ✅
+Cierra Ollama desde el icono de la bandeja y vuelve a abrirlo para que lea el cambio. En la
+web: **Ajustes de la IA → Probar conexión**. La dirección por defecto es
+`http://localhost:11434`.
 
-Nota: la laptop con Ollama debe estar **encendida y con el túnel activo** mientras alguien
-consulte. En la misma laptop puedes dejar `http://localhost:11434` (funciona sin túnel).
+**Seguridad:** `OLLAMA_ORIGINS` es una regla CORS, no autenticación. No uses `*`, no expongas
+el puerto `11434` directamente a internet ni publiques un túnel abierto hacia Ollama. Para
+acceso remoto desde otra PC se requiere una capa privada/autenticada, que no forma parte de
+esta demo.
 
 ## 4. Datos reales (CONADESUCA)
 
@@ -84,13 +85,12 @@ Atencingo,2024-2025,100.22,17144.3,219154.4
 
 - `rendimiento_t_ha` = caña molida bruta / superficie cosechada al cierre de la zafra.
 - `produccion_t` = azúcar total al cierre de la zafra.
-- La zafra **2025-2026 está en curso**: sus valores son parciales.
-- En INFOCANA las cifras semanales son acumuladas de la zafra; el script toma
-  el valor de la última semana (no la suma).
-- Los nombres de ingenios se normalizaron (la fuente usa razones sociales
-  distintas para el mismo molino: "Fideicomiso Ingenio X", "Cía. Azucarera X"...).
-- `datos-raw/` también incluye costos de producción por zafra (14 CSV),
-  balances mensuales de azúcar y sustentabilidad, para indicadores futuros.
+- En INFOCANA las cifras semanales son acumuladas; el integrador toma el valor máximo de la zafra, no la suma.
+- Los nombres de ingenios se normalizaron; la fuente puede usar razones sociales distintas para el mismo molino.
+- El rendimiento promedio del conjunto filtrado se pondera por superficie: `suma(rendimiento × hectáreas) / suma(hectáreas)`. El ranking por ingenio usa el mismo método y muestra su cobertura de zafras.
+- El mayor registro individual se presenta separado del promedio por ingenio e incluye su zafra; no deben confundirse ambas medidas.
+- La zafra **2025-2026 está en curso**. La interfaz solo la advierte cuando sus registros válidos entran en el cálculo. Ceros de producción en esa zafra se tratan como aún no reportados, no como producción real igual a cero.
+- `datos-raw/` también incluye costos de producción, balances mensuales de azúcar y sustentabilidad para indicadores futuros, pero esos temas no se consultan todavía en la app.
 
 Para regenerar `datos.csv` (zafra nueva o datos actualizados):
 
@@ -98,16 +98,20 @@ Para regenerar `datos.csv` (zafra nueva o datos actualizados):
 python build-datos.py
 ```
 
-El script imprime una validación por zafra (ingenios, superficie, azúcar)
-coherente con los totales nacionales conocidos (~740-800 mil ha y
-~4.7-6.0 millones de t de azúcar por zafra).
+El script imprime una validación por zafra (ingenios, superficie, azúcar).
+Pruebas locales de cálculos, CSV, reglas de alcance y cifras integradas:
+
+```
+node tests/analytics.test.js
+node tests/real-data.test.js
+```
 
 ## 5. Problemas comunes
 
 | Síntoma | Causa y solución |
 |---|---|
-| "No pude conectar con la IA" | Ollama no corre o el túnel se apagó. Reabre Ollama / repite el túnel y pega la URL nueva en ⚙ |
-| "Sin conexión" al Probar | Falta `OLLAMA_ORIGINS` — ejecuta el `setx`, cierra y reabre Ollama |
-| "Ollama no tiene el modelo" | `ollama pull llama3.2:3b` (o cambia el nombre en ⚙) |
-| El navegador pide permiso para "acceder a dispositivos locales" | Es normal en modo localhost → **Permitir** |
-| Primer clic tarda ~30 s en la web | El hosting gratis duerme la página; al entrar alguien se despierta |
+| "No pude conectar con la IA" | Abre Ollama en la misma laptop y comprueba que Ajustes de la IA use `http://localhost:11434`. |
+| "Sin comunicación" al Probar | Define `OLLAMA_ORIGINS` con el origen exacto (sin `*`), cierra y vuelve a abrir Ollama. Recuerda que CORS no es autenticación. |
+| "Modelo no disponible" | Ejecuta `ollama list`; si falta, usa `ollama pull llama3.2:3b` y vuelve a probar. |
+| El navegador pide permiso de red local | Es normal si la web HTTPS llama al Ollama de esta misma laptop; permite solo en tu equipo de confianza. |
+| Abro la web en otra PC y no hay IA | Es lo esperado: en esa PC `localhost` significa esa misma PC. Ollama debe correr en el equipo que usa el navegador o configurarse una solución privada autenticada. |

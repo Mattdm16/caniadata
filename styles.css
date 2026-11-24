@@ -22,7 +22,7 @@ body{
 .masthead{
   background:var(--navy-900); color:#f2ead6;
   display:flex; justify-content:space-between; align-items:center; gap:16px;
-  padding:18px 28px; border-bottom:3px solid var(--gold); flex-wrap:wrap;
+  padding:18px 28px; border-bottom:1px solid var(--gold); flex-wrap:wrap;
 }
 .brand{display:flex; align-items:center; gap:13px}
 .brand-name{font-family:var(--serif); font-weight:700; font-size:27px; margin:0; letter-spacing:-.01em; line-height:1.1}
@@ -140,11 +140,28 @@ body{
   letter-spacing:.09em; color:var(--muted); margin-bottom:5px;
 }
 .ledger dd{
-  margin:0; font-family:var(--serif); font-size:21px; font-weight:600;
+  margin:0; font-family:var(--serif); font-size:20px; font-weight:600;
   font-variant-numeric:tabular-nums; line-height:1.25; letter-spacing:-.01em;
+  overflow-wrap:anywhere;
 }
-.base{font-size:13px; color:var(--muted); margin:11px 0 0}
+.base{font-size:13px; color:var(--muted); margin:11px 0 0; line-height:1.55}
 .base span{font-weight:600; color:var(--ink)}
+.hallazgos{
+  margin-top:15px; padding:15px 17px; background:var(--card);
+  border:1px solid var(--line); border-radius:var(--r-md);
+}
+.hallazgos h3,.acta-evidence h4,.ai-guidance h4{
+  font-family:var(--serif); font-size:17px; font-weight:700; color:var(--navy-900);
+  margin:0 0 8px;
+}
+.hallazgos-subtitulo{font-family:var(--font); font-size:13px; font-weight:700; color:var(--navy-800); margin:11px 0 4px}
+.hallazgos-metodo,.hallazgos-nota,.method-note,.partial-note{
+  margin:8px 0 0; color:var(--muted); font-size:12.5px; line-height:1.6;
+}
+.hallazgos ol,.acta-evidence ol{margin:8px 0 0; padding-left:23px}
+.hallazgos li,.acta-evidence li{padding:3px 0; font-size:13.5px; line-height:1.5}
+.ranking-cobertura{color:var(--muted); font-size:12.5px}
+.partial-note{color:var(--warn); font-weight:600}
 
 /* ---------- Hilo de actas ---------- */
 .paso--hilo{flex:1; display:flex; flex-direction:column; min-height:0}
@@ -156,6 +173,7 @@ body{
 .empty-state{margin:auto; text-align:center; max-width:62ch}
 .empty-title{font-family:var(--serif); font-size:21px; font-weight:600; margin:0 0 8px}
 .empty-state p{margin:6px 0; font-size:14px; color:var(--muted); line-height:1.7}
+.session-note{font-size:12px !important; font-style:italic; color:var(--muted) !important}
 .acta{
   border:1px solid var(--line); border-radius:var(--r-md); padding:18px 20px;
   background:#fff; animation:acta-in .45s cubic-bezier(.2,.9,.25,1) both;
@@ -170,8 +188,17 @@ body{
 .acta-meta{font-size:12.5px; color:var(--muted)}
 .acta-q{
   font-family:var(--serif); font-style:italic; font-size:16.5px; line-height:1.6;
-  margin:0 0 14px; padding-left:14px; border-left:2px solid var(--gold);
+  margin:0 0 14px; padding-left:14px; border-left:1px solid var(--gold);
 }
+.acta-evidence{
+  background:var(--paper); border:1px solid var(--line-soft); border-radius:12px;
+  padding:15px 17px; margin:14px 0;
+}
+.acta-evidence p{font-size:13.5px; line-height:1.6; margin:7px 0}
+.acta-evidence .method-note{font-size:12px}
+.ai-guidance{margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft)}
+.ai-guidance h4{margin:0 0 4px}
+.ai-disclaimer{font-size:12px; color:var(--muted); margin:0 0 9px; font-style:italic}
 .informe{font-size:14.5px; line-height:1.75; max-width:75ch}
 .informe h4{
   font-family:var(--serif); font-size:16px; font-weight:700; color:var(--navy-900);
@@ -211,6 +238,20 @@ body{
 }
 .msg-error strong{color:var(--err)}
 .msg-error ol{margin:8px 0 0; padding-left:20px}
+.msg-error button,.msg-policy button{
+  font-family:inherit; color:#fff; background:var(--navy-800); border:0;
+  border-radius:9px; padding:8px 13px; font-size:12.5px; font-weight:600; cursor:pointer;
+  margin-top:8px;
+}
+.msg-error button:hover,.msg-policy button:hover{background:var(--navy-700)}
+.msg-policy{
+  font-size:14px; line-height:1.65; color:var(--navy-900); background:#f4f0e5;
+  border:1px solid #d9cba4; border-radius:12px; padding:14px 16px;
+}
+.msg-policy p{margin:5px 0 0}
+.msg-policy strong{font-family:var(--serif); font-size:16px; color:var(--navy-900)}
+.seg-turn{display:grid; gap:8px}
+.seg-turn .msg-policy{font-size:13px}
 
 /* ---------- Colofón ---------- */
 .colofon{

@@ -18,14 +18,14 @@
           <svg viewBox="0 0 32 32" width="30" height="30"><circle cx="16" cy="16" r="14.5" fill="none" stroke="#b08a35" stroke-width="1.6"/><path d="M11 24V10M16 24V7M21 24v-9" stroke="#f2ead6" stroke-width="1.8" stroke-linecap="round"/><path d="M11 13c-1.5-1-2-2.4-2-4 1.8.2 3 1 3.6 2.4M16 10c-1.5-1-2-2.4-2-4 1.8.2 3 1 3.6 2.4M21 16c-1.5-1-2-2.4-2-4 1.8.2 3 1 3.6 2.4" stroke="#b08a35" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
         </span>
         <div>
-          <p class="brand-name">CAÑAIdata</p>
+          <h1 class="brand-name">CAÑAIdata</h1>
           <p class="brand-sub">Consultoría agroindustrial · Caña de azúcar</p>
         </div>
       </div>
       <div class="mast-right">
         <span class="data-badge" id="dataBadge">Cargando datos…</span>
-        <span class="ia-pill" id="iaPill" title="Estado de la IA local"><span class="dot" id="iaDot"></span><span id="iaPillTxt">IA local</span></span>
-        <button class="mast-btn" id="cfgBtn" aria-expanded="false">
+        <span class="ia-pill" id="iaPill" title="Estado de la IA local" role="status" aria-live="polite"><span class="dot" id="iaDot"></span><span id="iaPillTxt">IA local</span></span>
+        <button class="mast-btn" id="cfgBtn" aria-expanded="false" aria-controls="iaConfig">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
           Ajustes de la IA
         </button>
@@ -93,7 +93,7 @@
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 6h16v9H9l-5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
               Pregunta del cliente
             </label>
-            <textarea id="composerInput" rows="4" maxlength="400" placeholder="Formule su pregunta sobre la producción de caña de azúcar…"></textarea>
+            <textarea id="composerInput" rows="4" maxlength="400" aria-describedby="qCount" placeholder="Formule su pregunta sobre la producción de caña de azúcar…"></textarea>
             <div class="qmeta"><span id="qCount">0 / 400</span><span>Máximo 400 caracteres</span></div>
           </div>
 
@@ -101,7 +101,7 @@
             <p class="ejemplos-titulo">Para comenzar, por ejemplo:</p>
             <button type="button" class="ejemplo" data-q="¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?">Comparar los mejores ingenios con el promedio</button>
             <button type="button" class="ejemplo" data-q="¿Cómo ha evolucionado el rendimiento de campo en las últimas zafras y qué tendencia se observa?">Evolución y tendencia del rendimiento</button>
-            <button type="button" class="ejemplo" data-q="¿Qué prácticas de manejo explican el rendimiento de los ingenios líderes y cuáles son replicables?">Prácticas replicables de los líderes</button>
+            <button type="button" class="ejemplo" data-q="¿Qué prácticas de manejo conviene evaluar en los ingenios con mejor rendimiento?">Prácticas que conviene evaluar</button>
           </div>
 
           <button class="consult-btn" id="consultBtn">Generar recomendación</button>
@@ -122,6 +122,13 @@
             <div><dt>Periodo analizado</dt><dd id="statPeriodo">—</dd></div>
           </dl>
           <p class="base">Base de datos consultada: <span id="baseDatos">—</span></p>
+          <section class="hallazgos" id="hallazgos" hidden aria-label="Hallazgos calculados">
+            <h3>Hallazgos calculados del CSV</h3>
+            <p class="hallazgos-metodo" id="hallazgosMetodo"></p>
+            <h4 class="hallazgos-subtitulo" id="hallazgosTitulo">Resultados por ingenio</h4>
+            <ol id="rankingIngenios"></ol>
+            <p class="hallazgos-nota" id="hallazgosNota"></p>
+          </section>
         </section>
 
         <section class="paso paso--hilo" aria-label="Paso 3: recomendación de la consultora">
@@ -129,7 +136,8 @@
           <div class="thread" id="thread" aria-live="polite">
             <div class="empty-state" id="emptyState">
               <p class="empty-title">El expediente está listo para abrirse.</p>
-              <p>Defina los filtros, formule su pregunta en el paso 1 y pulse <strong>Generar recomendación</strong>. Cada consulta queda registrada como un acta numerada, con su expediente de cifras y hasta tres preguntas de seguimiento.</p>
+              <p>Defina los filtros, formule una pregunta sobre los indicadores disponibles y pulse <strong>Generar recomendación</strong>. Cada consulta válida abre un acta con cifras calculadas y hasta tres seguimientos; las consultas fuera de alcance se detienen antes de llamar a la IA.</p>
+              <p class="session-note">Las actas y seguimientos viven solo en esta sesión del navegador; al recargar la página se reinicia el expediente.</p>
             </div>
           </div>
         </section>
@@ -137,7 +145,7 @@
     </main>
 
     <footer class="colofon">
-      <span>Datos: CONADESUCA vía datos.gob.mx (CC-BY 4.0)</span>
+      <span id="footSource">Cargando fuente de datos…</span>
       <span aria-hidden="true">·</span>
       <span>IA local: <span id="footModelo">llama3.2:3b</span> mediante Ollama</span>
       <span aria-hidden="true">·</span>
@@ -145,6 +153,7 @@
     </footer>
   </div>
   <script src="./datos-demo.js"></script>
+  <script src="./analytics.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
