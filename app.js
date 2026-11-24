@@ -60,7 +60,12 @@ $(function () {
       : 'Datos de ejemplo');
     $('#footModelo').text(aiModel());
     llenarFiltros();
-    calcular();
+    // Opciones recomendadas por defecto: panorama nacional, última zafra
+    // completa (se evita la 2025-2026, en curso) e indicador de rendimiento.
+    $('#ingenio').val('todos');
+    if ($('#zafra option[value="2024-2025"]').length) $('#zafra').val('2024-2025');
+    $('#indicador').val('rendimiento');
+    // El expediente permanece vacío ("—") hasta la primera consulta.
     sondearIA();
   }
 
