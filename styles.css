@@ -128,12 +128,6 @@ body{
 }
 
 /* ---------- Expediente ---------- */
-.aviso{
-  display:flex; gap:9px; align-items:flex-start; margin:12px 0 0;
-  font-size:13px; color:var(--warn); background:var(--warn-bg);
-  border:1px solid #dccb96; border-radius:12px; padding:10px 13px; line-height:1.55;
-}
-.aviso svg{flex:none; margin-top:2px}
 .ledger{
   display:grid; grid-template-columns:repeat(4,1fr); gap:0;
   margin:16px 0 0; background:var(--card);

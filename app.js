@@ -3,7 +3,7 @@
 $(function () {
   var AI_URL_DEFAULT = 'http://localhost:11434';
   var MODELO_DEFAULT = 'llama3.2:3b';
-  var MIN_Q = 15, MAX_Q = 400, MAX_SEG = 3;
+  var MAX_Q = 400, MAX_SEG = 3;
   var ZAFRA_CURSO = '2025-2026';
 
   var datos = [];
@@ -129,8 +129,8 @@ $(function () {
     $('#statMejorLbl').text(stats.mejor ? 'Mejor · ' + stats.mejor.ingenio : 'Mejor registro');
     $('#statMejor').text(stats.mejor ? fmt(stats.mejor.v) + ' ' + stats.unidad : '—');
     $('#statPeriodo').text(stats.periodo);
-    $('#avisoParcial').prop('hidden', !stats.parcial);
-    $('#baseDatos').text(stats.registros + ' registros · ' + stats.filtrosTxt);
+    $('#baseDatos').text(stats.registros + ' registros · ' + stats.filtrosTxt +
+      (stats.parcial ? ' · Incluye la zafra en curso 2025-2026 (cifras parciales).' : ''));
   }
 
   /* ---------- estado de la IA ---------- */
@@ -235,7 +235,7 @@ $(function () {
 
   function consultar() {
     var pregunta = $('#composerInput').val().trim();
-    if (!pregunta || pregunta.length < MIN_Q || pregunta.length > MAX_Q || trabajando) {
+    if (!pregunta || trabajando) {
       $('#composerInput').trigger('focus'); return;
     }
     calcular();
@@ -314,11 +314,11 @@ $(function () {
   /* ---------- validación de la pregunta ---------- */
   function preguntaValida() {
     var n = $('#composerInput').val().trim().length;
-    return n >= MIN_Q && n <= MAX_Q;
+    return n > 0 && n <= MAX_Q;
   }
   function validarPregunta() {
     var n = $('#composerInput').val().trim().length;
-    $('#qCount').text(n + ' / ' + MAX_Q).toggleClass('fuera', n > MAX_Q || (n > 0 && n < MIN_Q));
+    $('#qCount').text(n + ' / ' + MAX_Q).toggleClass('fuera', n > MAX_Q);
     if (!trabajando) $('#consultBtn').prop('disabled', !preguntaValida());
   }
 
@@ -358,9 +358,6 @@ $(function () {
   /* ---------- eventos ---------- */
   $('#ingenio, #zafra, #indicador').on('change', calcular);
   $('#composerInput').on('input', validarPregunta);
-  $('#composerInput').on('keydown', function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); consultar(); }
-  });
   $('#consultBtn').on('click', consultar);
   $('.ejemplo').on('click', function () {
     $('#composerInput').val($(this).data('q')).trigger('focus');
@@ -371,8 +368,7 @@ $(function () {
     var a = actas.filter(function (x) { return x.id === Number($art.attr('id').replace('acta-', '')); })[0];
     if (!a) return;
     var q = $art.find('.seg-row input').val().trim();
-    if (!q || q.length < MIN_Q) { $art.find('.seg-row input').trigger('focus'); return; }
-    if (q.length > MAX_Q) return;
+    if (!q || q.length > MAX_Q) { $art.find('.seg-row input').trigger('focus'); return; }
     $art.find('.seg-row input').val('');
     seguimiento(a, q, $art);
   });
