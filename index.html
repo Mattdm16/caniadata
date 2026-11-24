@@ -3,99 +3,150 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CAÑAIdata — Producción de Caña de Azúcar</title>
+  <title>CAÑAIdata — Consultoría agroindustrial · Caña de azúcar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
   <div class="page">
-    <main class="shell" aria-label="CAÑAData">
-      <!-- ============ LEFT: solo filtros ============ -->
-      <aside class="sidebar" aria-label="Consulta y recomendación">
-        <p class="panel-title"><span aria-hidden="true">◉</span> Consulta y Recomendación</p>
-
-        <div class="field">
-          <label for="ingenio"><span aria-hidden="true">🏭</span> Ingenio azucarero</label>
-          <select id="ingenio">
-            <option value="todos">Todos los ingenios</option>
-          </select>
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="30" height="30"><circle cx="16" cy="16" r="14.5" fill="none" stroke="#b08a35" stroke-width="1.6"/><path d="M11 24V10M16 24V7M21 24v-9" stroke="#f2ead6" stroke-width="1.8" stroke-linecap="round"/><path d="M11 13c-1.5-1-2-2.4-2-4 1.8.2 3 1 3.6 2.4M16 10c-1.5-1-2-2.4-2-4 1.8.2 3 1 3.6 2.4M21 16c-1.5-1-2-2.4-2-4 1.8.2 3 1 3.6 2.4" stroke="#b08a35" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
+        </span>
+        <div>
+          <p class="brand-name">CAÑAIdata</p>
+          <p class="brand-sub">Consultoría agroindustrial · Caña de azúcar</p>
         </div>
+      </div>
+      <div class="mast-right">
+        <span class="data-badge" id="dataBadge">Cargando datos…</span>
+        <span class="ia-pill" id="iaPill" title="Estado de la IA local"><span class="dot" id="iaDot"></span><span id="iaPillTxt">IA local</span></span>
+        <button class="mast-btn" id="cfgBtn" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          Ajustes de la IA
+        </button>
+      </div>
+    </header>
 
-        <div class="field">
-          <label for="zafra"><span aria-hidden="true">📅</span> Zafra (periodo)</label>
-          <select id="zafra">
-            <option value="todas">Todas las zafras</option>
-          </select>
+    <div class="ia-config" id="iaConfig" aria-label="Configuración de la IA">
+      <div class="ia-grid">
+        <div>
+          <label for="cfgUrl">Dirección de la IA (Ollama)</label>
+          <input id="cfgUrl" type="text" placeholder="https://algo.trycloudflare.com" autocomplete="off" />
         </div>
-
-        <div class="field">
-          <label for="indicador"><span aria-hidden="true">📊</span> Indicador de análisis</label>
-          <select id="indicador">
-            <option value="rendimiento">Rendimiento de campo (t/ha)</option>
-            <option value="superficie">Superficie cosechada (ha)</option>
-            <option value="produccion">Producción de azúcar (t)</option>
-          </select>
+        <div>
+          <label for="cfgModelo">Modelo</label>
+          <input id="cfgModelo" type="text" placeholder="llama3.2:3b" autocomplete="off" />
         </div>
+      </div>
+      <div class="cfg-actions">
+        <button type="button" class="cfg-accion" id="cfgProbar">Probar conexión</button>
+        <button type="button" class="cfg-accion cfg-accion--primary" id="cfgGuardar">Guardar</button>
+      </div>
+      <p class="cfg-status" id="cfgStatus">En localhost funciona sin cambiar nada. Para usar la página desde la web u otra máquina, pegue aquí la dirección del túnel y pulse Guardar.</p>
+    </div>
 
-        <button class="consult-btn" id="consultBtn">✦ Consultar con IA</button>
+    <main class="shell">
+      <!-- Paso 1 -->
+      <aside class="sidebar" aria-label="Paso 1: definir la consulta">
+        <section class="paso">
+          <h2><span class="paso-num" aria-hidden="true">1</span> Definir la consulta</h2>
 
-        <p class="note"><span aria-hidden="true">ⓘ</span> La respuesta se genera con IA local (Ollama) usando los datos cargados. El modelo se ajusta en ⚙ Configurar IA.</p>
+          <div class="field">
+            <label for="ingenio">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 21V10l5-3v4h4V7l5 3v11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M2.5 21h19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              Ingenio azucarero
+            </label>
+            <select id="ingenio">
+              <option value="todos">Todos los ingenios</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="zafra">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              Zafra (periodo)
+            </label>
+            <select id="zafra">
+              <option value="todas">Todas las zafras</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="indicador">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7 20v-7M12 20V6M17 20v-10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              Indicador de análisis
+            </label>
+            <select id="indicador">
+              <option value="rendimiento">Rendimiento de campo (t/ha)</option>
+              <option value="superficie">Superficie cosechada (ha)</option>
+              <option value="produccion">Producción de azúcar (t)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="composerInput">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 6h16v9H9l-5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              Pregunta del cliente
+            </label>
+            <textarea id="composerInput" rows="4" maxlength="400" placeholder="Formule su pregunta sobre la producción de caña de azúcar…">¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?</textarea>
+            <div class="qmeta"><span id="qCount">0 / 400</span><span id="qRule">Mínimo 15 caracteres · Ctrl + Enter para enviar</span></div>
+          </div>
+
+          <div class="ejemplos" aria-label="Preguntas de ejemplo">
+            <p class="ejemplos-titulo">Para comenzar, por ejemplo:</p>
+            <button type="button" class="ejemplo" data-q="¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?">Comparar los mejores ingenios con el promedio</button>
+            <button type="button" class="ejemplo" data-q="¿Cómo ha evolucionado el rendimiento de campo en las últimas zafras y qué tendencia se observa?">Evolución y tendencia del rendimiento</button>
+            <button type="button" class="ejemplo" data-q="¿Qué prácticas de manejo explican el rendimiento de los ingenios líderes y cuáles son replicables?">Prácticas replicables de los líderes</button>
+          </div>
+
+          <button class="consult-btn" id="consultBtn">Generar recomendación</button>
+          <p class="composer-hint" id="composerHint">La respuesta se genera con IA local, a partir de los datos cargados.</p>
+
+          <p class="note">Esta consultora asesora exclusivamente sobre la producción de caña de azúcar a partir de los datos históricos cargados. El modelo se ajusta en Ajustes de la IA.</p>
+        </section>
       </aside>
 
-      <!-- ============ CENTER: chat limpio ============ -->
-      <section class="stage initial" aria-label="Resultados y chat">
-        <header class="banner">
-          <span class="data-badge" id="dataBadge">Cargando datos…</span>
-          <div class="banner-text">
-            <h1>CAÑAIdata</h1>
-          </div>
-        </header>
+      <!-- Pasos 2 y 3 -->
+      <section class="stage" aria-label="Expediente y recomendación">
+        <section class="paso" aria-label="Paso 2: expediente de análisis">
+          <h2><span class="paso-num" aria-hidden="true">2</span> Expediente de análisis</h2>
+          <p class="aviso" id="avisoParcial" hidden>
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4 3.5 19.5h17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1" fill="currentColor"/></svg>
+            Cifras parciales: la zafra 2025-2026 está en curso y sus valores son provisionales.
+          </p>
+          <dl class="ledger">
+            <div><dt>Ingenios analizados</dt><dd id="statIngenios">—</dd></div>
+            <div><dt id="statPromedioLbl">Promedio · rendimiento</dt><dd id="statPromedio">—</dd></div>
+            <div><dt id="statMejorLbl">Mejor registro</dt><dd id="statMejor">—</dd></div>
+            <div><dt>Periodo analizado</dt><dd id="statPeriodo">—</dd></div>
+          </dl>
+          <p class="base">Base de datos consultada: <span id="baseDatos">—</span></p>
+        </section>
 
-        <p class="section-bar section-bar--green results-part"><span aria-hidden="true">📶</span> Resultado del análisis</p>
-
-        <div class="stats results-part" id="statsRow">
-          <div class="stat"><span class="stat-ico" aria-hidden="true">🌱</span><div><span>Ingenios analizados</span><strong id="statIngenios">—</strong></div></div>
-          <div class="stat"><span class="stat-ico" aria-hidden="true">🌴</span><div><span id="statPromedioLbl">Promedio · rendimiento</span><strong id="statPromedio">—</strong></div></div>
-          <div class="stat"><span class="stat-ico" aria-hidden="true">📈</span><div><span id="statMejorLbl">Mejor · —</span><strong id="statMejor">—</strong></div></div>
-          <div class="stat"><span class="stat-ico" aria-hidden="true">📅</span><div><span>Periodo analizado</span><strong id="statPeriodo">—</strong></div></div>
-        </div>
-
-        <p class="section-bar section-bar--lilac"><span aria-hidden="true">✦</span> Recomendación de la IA</p>
-
-        <div class="thread" id="thread" aria-live="polite">
-          <div class="empty-state" id="emptyState">
-            <p><strong>Aquí aparecerá el análisis.</strong></p>
-            <p>Elige los filtros de la izquierda, escribe tu pregunta abajo y pulsa <strong>Consultar con IA</strong>.<br />La IA corre en la laptop del equipo (Ollama), conectada en local o por túnel.</p>
-          </div>
-        </div>
-
-        <div class="composer" role="search">
-          <label class="composer-label" for="composerInput">💬 Pregunta o solicitud</label>
-          <div class="composer-row">
-            <textarea id="composerInput" rows="2" placeholder="¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?">¿Qué ingenios presentan mejor rendimiento de campo y cómo se comparan con el promedio histórico?</textarea>
-            <button class="send-btn" id="sendBtn" aria-label="Consultar con IA">↑</button>
-            <button class="cfg-btn" id="cfgBtn" aria-label="Configurar IA" title="Configurar IA">⚙</button>
-          </div>
-
-          <div class="ia-config" aria-label="Configuración de la IA">
-            <label for="cfgUrl">URL de la IA (Ollama)</label>
-            <input id="cfgUrl" type="text" placeholder="https://algo.trycloudflare.com" />
-            <label for="cfgModelo">Modelo</label>
-            <input id="cfgModelo" type="text" placeholder="llama3.2:3b" />
-            <div class="cfg-actions">
-              <button type="button" class="cfg-accion" id="cfgProbar">Probar conexión</button>
-              <button type="button" class="cfg-accion" id="cfgGuardar">Guardar</button>
+        <section class="paso paso--hilo" aria-label="Paso 3: recomendación de la consultora">
+          <h2><span class="paso-num" aria-hidden="true">3</span> Recomendación de la consultora</h2>
+          <div class="thread" id="thread" aria-live="polite">
+            <div class="empty-state" id="emptyState">
+              <p class="empty-title">El expediente está listo para abrirse.</p>
+              <p>Defina los filtros, formule su pregunta en el paso 1 y pulse <strong>Generar recomendación</strong>. Cada consulta queda registrada como un acta numerada, con su expediente de cifras y hasta tres preguntas de seguimiento.</p>
             </div>
-            <p class="cfg-status" id="cfgStatus">En localhost funciona sin cambiar nada. Para usar la página desde la web u otra máquina, pega aquí la URL del túnel (trycloudflare) y pulsa Guardar.</p>
           </div>
-
-          <p class="composer-hint" id="composerHint">La respuesta se genera con IA local.</p>
-        </div>
+        </section>
       </section>
     </main>
+
+    <footer class="colofon">
+      <span>Datos: CONADESUCA vía datos.gob.mx (CC-BY 4.0)</span>
+      <span aria-hidden="true">·</span>
+      <span>IA local: <span id="footModelo">llama3.2:3b</span> mediante Ollama</span>
+      <span aria-hidden="true">·</span>
+      <span>Documento de trabajo — uso académico</span>
+    </footer>
   </div>
   <script src="./datos-demo.js"></script>
   <script src="./app.js"></script>
